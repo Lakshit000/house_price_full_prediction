@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="center-card">
+  <h2>Predict House Price</h2>
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  <form method="POST">
+    {% for f in features %}
+      <label>{{ f }}</label>
+      <input name="{{ f }}" placeholder="{{ f }}" required>
+    {% endfor %}
+    <button class="btn primary">Predict</button>
+  </form>
+  {% if predicted_price %}
+    <div class="result">Predicted Price: ₹ {{ predicted_price }}</div>
+  {% endif %}
+</div>
+{% endblock %}

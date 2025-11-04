@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="center-card">
+  <h2>Prediction History</h2>
+  <table class="history-table">
+    <tr><th>Date</th><th>Inputs</th><th>Price</th></tr>
+    {% for r in rows %}
+      <tr>
+        <td>{{ r['timestamp'] }}</td>
+        <td>{{ r['input_json'] }}</td>
+        <td>₹ {{ r['predicted_price'] }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}
