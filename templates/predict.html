@@ -1,17 +1,93 @@
 {% extends "base.html" %}
+{% block title %}Predict — House Price AI{% endblock %}
 {% block content %}
-<div class="center-card">
-  <h2>Predict House Price</h2>
-  {% if error %}<div class="error">{{ error }}</div>{% endif %}
-  <form method="POST">
-    {% for f in features %}
-      <label>{{ f }}</label>
-      <input name="{{ f }}" placeholder="{{ f }}" required>
-    {% endfor %}
-    <button class="btn primary">Predict</button>
-  </form>
+<section class="predict-layout">
+  <div class="predict-hero card">
+    <p class="muted" style="margin:0;">Prediction studio</p>
+    <h2 style="margin:.4rem 0;">Estimate a property with confidence</h2>
+    <p class="muted">Enter the latest specs for any listing and tap predict to get a price.</p>
+    
+    <div class="card-actions" style="margin-top:1.2rem;">
+      <a class="btn small ghost" href="{{ url_for('history') }}">View history</a>
+      <a class="btn small ghost" href="{{ url_for('visuals')  }}">View visuals</a>
+      <a class="btn small ghost" href="{{ url_for('model_performance') }}">View model performance</a>
+    </div>
+  </div>
+
+  <div class="predict-card card">
+    {% if error %}
+      <div class="flash danger">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" id="predict-form" class="predict-form">
+      <div class="predict-field">
+        <label>Living Area (sq ft)</label>
+        <input type="number" name="living area" placeholder="Enter the value" min="200" required>
+      </div>
+      <div class="predict-field">
+        <label>Number of Bedrooms</label>
+        <input type="number" name="number of bedrooms" placeholder="Enter the value" min="0" required>
+      </div>
+      <div class="predict-field">
+        <label>Number of Bathrooms</label>
+        <input type="number" name="number of bathrooms" placeholder="Enter the value" step="0.25" min="0" required>
+      </div>
+      <div class="predict-field">
+        <label>Number of Floors</label>
+        <input type="number" name="number of floors" placeholder="Enter the value" step="0.25" min="0" required>
+      </div>
+      <div class="predict-field">
+        <label>Condition of House (1-5)</label>
+        <input type="number" name="condition of the house" min="1" max="5" placeholder="Enter the value" required>
+      </div>
+      <div class="predict-field">
+        <label>Grade of House (1-13)</label>
+        <input type="number" name="grade of the house" min="1" max="13" placeholder="Enter the value" required>
+      </div>
+      <div class="predict-field">
+        <label>Area Excluding Basement (sq ft)</label>
+        <input type="number" name="Area of the house(excluding basement)" placeholder="Enter the value" min="0" required>
+      </div>
+      <div class="predict-field">
+        <label>Basement Area (sq ft)</label>
+        <input type="number" name="Area of the basement" placeholder="Enter the value" min="0" required>
+      </div>
+      <div class="predict-field">
+        <label>Built Year</label>
+        <input type="number" name="Built Year" placeholder="Enter the value" min="1900" max="2024" required>
+      </div>
+      <button class="btn" type="submit">Predict price</button>
+    </form>
+  </div>
+
   {% if predicted_price %}
-    <div class="result">Predicted Price: ₹ {{ predicted_price }}</div>
+    <div class="result-modal show" id="prediction-modal">
+      <div class="modal-card">
+        <button type="button" class="modal-close" id="close-modal">&times;</button>
+        <p class="muted" style="margin:0;">Predicted price</p>
+        <div class="modal-value">₹ {{ "{:,.2f}".format(predicted_price) }}</div>
+        {% if input_preview %}
+          <p class="muted">Based on: {{ input_preview }}</p>
+        {% endif %}
+        <div class="card-actions" style="justify-content:center;margin-top:1rem;">
+          <a class="btn" href="{{ url_for('predict') }}">Predict again</a>
+        </div>
+      </div>
+    </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('prediction-modal');
+        const closeBtn = document.getElementById('close-modal');
+        if(modal && closeBtn){
+          closeBtn.addEventListener('click', () => modal.classList.remove('show'));
+          modal.addEventListener('click', (event) => {
+            if(event.target === modal){
+              modal.classList.remove('show');
+            }
+          });
+        }
+      });
+    </script>
   {% endif %}
-</div>
+</section>
 {% endblock %}

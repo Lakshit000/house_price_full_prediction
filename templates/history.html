@@ -1,16 +1,28 @@
 {% extends "base.html" %}
+{% block title %}History — House Price AI{% endblock %}
 {% block content %}
-<div class="center-card">
-  <h2>Prediction History</h2>
-  <table class="history-table">
-    <tr><th>Date</th><th>Inputs</th><th>Price</th></tr>
-    {% for r in rows %}
-      <tr>
-        <td>{{ r['timestamp'] }}</td>
-        <td>{{ r['input_json'] }}</td>
-        <td>₹ {{ r['predicted_price'] }}</td>
-      </tr>
-    {% endfor %}
-  </table>
+<div class="dashboard-container">
+  <div class="center-card">
+    <h2>Your Prediction History</h2>
+    <div style="margin-top:1rem; overflow:auto; max-height:520px;">
+      <table class="history-table">
+        <thead><tr><th>ID</th><th>Input (preview)</th><th>Predicted</th><th>Time</th></tr></thead>
+        <tbody>
+          {% if predictions %}
+            {% for p in predictions %}
+              <tr>
+                <td>{{ p.display_id if p.display_id else p.id }}</td>
+                <td style="max-width:420px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ p.input_preview if p.input_preview else (p.input_data[:50] + '...' if p.input_data and len(p.input_data) > 50 else p.input_data) }}</td>
+                <td>₹ {{ "{:,.2f}".format(p.predicted_price) }}</td>
+                <td>{{ p.formatted_timestamp if p.formatted_timestamp else p.timestamp }}</td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr><td colspan="4" style="text-align:center;color:rgba(255,255,255,0.75)">No predictions yet</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 {% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Admin · Create User{% endblock %}
+{% block content %}
+<section class="card wide-card">
+  <div class="card-header">
+    <div>
+      <p class="muted" style="margin:0;">Provision access</p>
+      <h2 style="margin:.2rem 0;">Invite teammate</h2>
+    </div>
+    <div class="card-actions">
+      <a class="btn small ghost" href="{{ url_for('admin_users') }}">Back to users</a>
+    </div>
+  </div>
+
+  <p class="muted">Create a credential for a new analyst or admin. They can change their password after signing in.</p>
+
+  <form method="post" class="form-grid">
+    <div class="input-group">
+      <label for="username">Username</label>
+      <input type="text" name="username" id="username" placeholder="janedoe" required>
+    </div>
+    <div class="input-group">
+      <label for="password">Temporary password</label>
+      <input type="text" name="password" id="password" placeholder="Choose a secure temp password" required>
+    </div>
+    <div class="input-group">
+      <label for="role">Role</label>
+      <select name="role" id="role">
+        <option value="user" selected>User</option>
+        <option value="admin">Admin</option>
+      </select>
+      <small class="form-note">Admins can see activity logs and remove predictions or users.</small>
+    </div>
+    <div class="form-actions" style="grid-column:span 2;">
+      <button class="btn" type="submit">Create user</button>
+      <a class="btn ghost" href="{{ url_for('admin_users') }}">Cancel</a>
+    </div>
+  </form>
+</section>
+{% endblock %}
+

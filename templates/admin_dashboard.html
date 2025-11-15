@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — House Price AI{% endblock %}
+{% block content %}
+<section class="dashboard-grid admin-mirror">
+
+  <div class="card welcome-card">
+    <div class="welcome-left">
+      <p class="muted" style="margin:0;">Admin control</p>
+      <h1>Welcome, <span class="accent">{{ session.username }}</span></h1>
+      <p class="muted">Use the tools below to manage users, audit activity, or export company-wide predictions.</p>
+
+      <div class="cta-row">
+        <a class="btn" href="{{ url_for('admin_users') }}">Manage users</a>
+        <a class="btn ghost" href="{{ url_for('admin_predictions') }}">Predictions</a>
+        <a class="btn ghost" href="{{ url_for('admin_activity') }}">Activity</a>
+      </div>
+    </div>
+
+    <div class="welcome-right stats-column">
+      <div class="stat">
+        <div class="stat-label">Total Users</div>
+        <div class="stat-value">{{ user_count }}</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-label">Total Admins</div>
+        <div class="stat-value">{{ admin_count }}</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-label">Predictions</div>
+        <div class="stat-value">{{ pred_count }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card wide-card">
+    <div class="card-header">
+      <h3>Recent Predictions</h3>
+      <div class="card-actions">
+        <a class="btn small ghost" href="{{ url_for('admin_predictions') }}">View all</a>
+        <a class="btn small" href="{{ url_for('admin_export_predictions') }}">Export CSV</a>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="styled-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>User</th>
+            <th>Inputs</th>
+            <th class="right-col">Price</th>
+            <th>Time</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if recent_predictions %}
+            {% for p in recent_predictions %}
+              <tr>
+                <td>{{ p.id }}</td>
+                <td>{{ p.username or ('#'+p.user_id|string if p.user_id else 'system') }}</td>
+                <td class="json-preview">{{ p.input_preview }}</td>
+                <td class="right-col">₹ {{ "{:,.2f}".format(p.predicted_price) }}</td>
+                <td>{{ p.formatted_timestamp if p.formatted_timestamp else p.timestamp }}</td>
+                <td>
+                  <form method="post" action="{{ url_for('admin_delete_prediction', pred_id=p.id) }}" onsubmit="return confirm('Delete this prediction?')">
+                    <button class="btn small danger" type="submit">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr><td colspan="6" class="empty">No predictions yet</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card wide-card">
+    <div class="card-header">
+      <h3>Live Activity</h3>
+      <div class="card-actions">
+        <a class="btn small ghost" href="{{ url_for('admin_activity') }}">View log</a>
+        <a class="btn small ghost" href="{{ url_for('admin_activity_export') }}">Export</a>
+      </div>
+    </div>
+    <ul class="activity-feed">
+      {% if recent_activity %}
+        {% for a in recent_activity %}
+          <li>
+            <div class="feed-title">{{ a.username or ('#'+a.user_id|string if a.user_id else 'system') }} · {{ a.action }}</div>
+            <div class="feed-meta">{{ a.details_preview }}</div>
+            <div class="feed-time">{{ a.ip or '—' }} · {{ a.formatted_timestamp if a.formatted_timestamp else a.timestamp }}</div>
+          </li>
+        {% endfor %}
+      {% else %}
+        <li class="empty">No recent activity</li>
+      {% endif %}
+    </ul>
+  </div>
+
+</section>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Admin · Activity{% endblock %}
+{% block content %}
+<section class="card wide-card">
+  <div class="card-header">
+    <div>
+      <p class="muted" style="margin:0;">Audit-ready feed</p>
+      <h2 style="margin:.2rem 0;">Activity logs</h2>
+    </div>
+    <div class="card-actions">
+      <a class="btn small ghost" href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+      <a class="btn small" href="{{ url_for('admin_activity_export') }}">Export CSV</a>
+      <form method="post" action="{{ url_for('admin_clear_activity') }}" onsubmit="return confirm('Clear all activity logs? This cannot be undone.');" style="margin:0;">
+        <button class="btn small danger" type="submit">Clear log</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="table-wrap" style="max-height:600px;overflow:auto;">
+    <table class="styled-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>User</th>
+          <th>Action</th>
+          <th>Details</th>
+          <th>IP / Time</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if activities %}
+          {% for a in activities %}
+            <tr>
+              <td>{{ a.id }}</td>
+              <td>{{ a.username or ('#'+a.user_id|string if a.user_id else 'system') }}</td>
+              <td>{{ a.action }}</td>
+              <td class="json-preview">{{ a.details_preview }}</td>
+              <td>{{ a.ip or '—' }} · {{ a.formatted_timestamp if a.formatted_timestamp else a.timestamp }}</td>
+              <td>
+                <form method="post" action="{{ url_for('admin_delete_activity', activity_id=a.id, page=page) }}" onsubmit="return confirm('Delete this log entry?');">
+                  <button class="btn small danger" type="submit">Delete</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr><td colspan="6" class="empty">No activity recorded</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card-actions" style="justify-content:center;margin-top:1.2rem;">
+    {% set prev_page = page - 1 %}
+    {% set next_page = page + 1 %}
+    <a class="btn small ghost" href="{{ url_for('admin_activity', page=prev_page) }}" {% if page <= 1 %}style="opacity:.4;pointer-events:none"{% endif %}>Previous</a>
+    <div class="badge-role">Page {{ page }}</div>
+    {% if total > page * per_page %}
+      <a class="btn small ghost" href="{{ url_for('admin_activity', page=next_page) }}">Next</a>
+    {% else %}
+      <a class="btn small ghost" style="opacity:.4;pointer-events:none">Next</a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
+

@@ -1,40 +1,89 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>House Price AI</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{% block title %}House Price AI{% endblock %}</title>
+
+  <!-- main stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <!-- small inline helper styles for icons if needed -->
+  <style>
+    :root { --brand:#1fb28a; --muted:#9aa6ae; --card-bg: rgba(10,20,30,0.55); }
+    body::before {
+      background-image: url("{{ url_for('static', filename='house3.jpg') }}") !important;
+    }
+  </style>
+  {% block head %}{% endblock %}
 </head>
-<body class="glass-bg">
-    <header class="glass-nav">
-        <div class="brand">🏡 House Price AI</div>
-        <nav>
-            {% if session.get('username') %}
-                <a href="{{ url_for('dashboard') }}">Dashboard</a>
-                <a href="{{ url_for('predict') }}">Predict</a>
-                <a href="{{ url_for('visuals') }}">Visuals</a>
-                <a href="{{ url_for('history') }}">History</a>
-                <a href="{{ url_for('logout') }}">Logout</a>
-            {% else %}
-                <a href="{{ url_for('login') }}">Login</a>
-                <a href="{{ url_for('signup') }}">Sign Up</a>
-            {% endif %}
-        </nav>
-    </header>
-    <main class="page">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="flash-wrap">
-                    {% for cat,msg in messages %}
-                        <div class="flash {{cat}} glass-card">{{msg}}</div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
-        {% block content %}{% endblock %}
-    </main>
-    <footer class="glass-footer">© 2025 House Price AI</footer>
+<body class="app-body">
+
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="logo" class="logo" onerror="this.style.display='none'">
+        <div class="brand-text">
+          <div class="app-name">House Price AI</div>
+          <div class="app-sub">Insights & Predictions</div>
+        </div>
+      </div>
+
+      <nav class="main-nav">
+        {% if links.dashboard %}<a href="{{ links.dashboard }}"><span class="nav-icon">🏠</span><span>Dashboard</span></a>{% endif %}
+        {% if links.predict %}<a href="{{ links.predict }}"><span class="nav-icon">📈</span><span>Predict</span></a>{% endif %}
+        {% if links.visuals %}<a href="{{ links.visuals }}"><span class="nav-icon">📊</span><span>Visuals</span></a>{% endif %}
+        {% if links.history %}<a href="{{ links.history }}"><span class="nav-icon">🕘</span><span>History</span></a>{% endif %}
+        {% if links.model_performance %}<a href="{{ links.model_performance }}"><span class="nav-icon">📐</span><span>Performance</span></a>{% endif %}
+        {% if links.admin and session.get('role') == 'admin' %}<a href="{{ links.admin }}"><span class="nav-icon">🛡</span><span>Admin</span></a>{% endif %}</nav>
+
+      <div class="top-actions">
+        {% if session.username %}
+          <div class="user-pill">Hi, <strong>{{ session.username }}</strong>
+            <a href="{{ url_for('logout') }}" class="link-logout">Logout</a>
+          </div>
+        {% else %}
+          {% if links.login %}<a href="{{ links.login }}" class="btn small">Login</a>{% endif %}
+          {% if links.signup %}<a href="{{ links.signup }}" class="btn small ghost">Sign Up</a>{% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <main class="container page-content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-wrap">
+          {% for cat, msg in messages %}
+            <div class="flash {{ cat|default('info') }}">{{ msg }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div>© {{ current_year }} House Price AI — Built with ❤️</div>
+      <div class="footer-links">
+        <small>Made by Team-04</small>
+      </div>
+    </div>
+  </footer>
+
+  <!-- small script to fade flash messages -->
+  <script>
+    window.addEventListener('load', ()=> {
+      setTimeout(()=> {
+        document.querySelectorAll('.flash').forEach(el => {
+          el.style.opacity = 0;
+          setTimeout(()=> el.remove(), 600);
+        });
+      }, 3500);
+    });
+  </script>
+  <script defer src="{{ url_for('static', filename='theme.js') }}"></script>
 </body>
 </html>

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Admin · Predictions{% endblock %}
+{% block content %}
+<section class="card wide-card">
+  <div class="card-header">
+    <div>
+      <p class="muted" style="margin:0;">Complete ledger</p>
+      <h2 style="margin:.2rem 0;">All predictions</h2>
+    </div>
+    <div class="card-actions">
+      <a class="btn small ghost" href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+      <a class="btn small" href="{{ url_for('admin_export_predictions') }}">Export CSV</a>
+    </div>
+  </div>
+
+  <div class="table-wrap" style="max-height:620px;overflow:auto;">
+    <table class="styled-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>User</th>
+          <th>Inputs (preview)</th>
+          <th class="right-col">Predicted price</th>
+          <th>Timestamp</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if predictions %}
+          {% for p in predictions %}
+            <tr>
+              <td>{{ p.id }}</td>
+              <td>{{ p.username or ('#'+p.user_id|string if p.user_id else 'system') }}</td>
+              <td class="json-preview">{{ p.input_preview }}</td>
+              <td class="right-col">₹ {{ "{:,.2f}".format(p.predicted_price) }}</td>
+              <td>{{ p.formatted_timestamp if p.formatted_timestamp else p.timestamp }}</td>
+              <td>
+                <form method="post" action="{{ url_for('admin_delete_prediction', pred_id=p.id) }}" onsubmit="return confirm('Delete this prediction?')">
+                  <button class="btn small danger" type="submit">Delete</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr><td colspan="6" class="empty">No predictions available</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

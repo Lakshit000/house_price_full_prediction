@@ -1,7 +1,83 @@
 {% extends "base.html" %}
+{% block title %}Dashboard — House Price AI{% endblock %}
+
 {% block content %}
-<div class="center-card">
-  <h2>Welcome, {{ username }}</h2>
-  <p>Use the menu to predict or view visuals.</p>
-</div>
+<section class="dashboard-grid user-dashboard">
+  <div class="card welcome-card">
+    <div class="welcome-left">
+      <p class="muted" style="margin:0;">Personal insights</p>
+      <h1>Welcome, <span class="accent">{{ session.username or 'User' }}</span></h1>
+      <p class="muted">Jump back into predictions, scan visuals, or review your history from this glass workspace.</p>
+
+      <div class="cta-row">
+        {% if links.predict %}<a class="btn" href="{{ links.predict }}">Make a prediction</a>{% endif %}
+        {% if links.visuals %}<a class="btn ghost" href="{{ links.visuals }}">View visuals</a>{% endif %}
+        {% if links.history %}<a class="btn ghost" href="{{ links.history }}">History</a>{% endif %}
+      </div>
+    </div>
+
+    <div class="welcome-right stats-column">
+      <div class="stat">
+        <div class="stat-label">My predictions</div>
+        <div class="stat-value">{{ user_pred_total }}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Latest price</div>
+        <div class="stat-value">
+          {% if recent_predictions and recent_predictions[0].predicted_price %}
+            ₹ {{ "{:,.0f}".format(recent_predictions[0].predicted_price) }}
+          {% else %}
+            —
+          {% endif %}
+        </div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Last run</div>
+        <div class="stat-value" style="font-size:1rem;">
+          {% if recent_predictions and recent_predictions[0].formatted_timestamp %}
+            {{ recent_predictions[0].formatted_timestamp }}
+          {% else %}
+            —
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card wide-card">
+    <div class="card-header">
+      <h3>Your recent predictions</h3>
+      <div class="card-actions">
+        {% if links.history %}<a class="btn small ghost" href="{{ links.history }}">View full history</a>{% endif %}
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="styled-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Input (preview)</th>
+            <th class="right-col">Price</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if recent_predictions %}
+            {% for p in recent_predictions %}
+              <tr>
+                <td>{{ p.display_id if p.display_id else p.id }}</td>
+                <td class="json-preview">{{ p.input_preview }}</td>
+                <td class="right-col">₹ {{ "{:,.2f}".format(p.predicted_price) }}</td>
+                <td>{{ p.formatted_timestamp if p.formatted_timestamp else p.timestamp }}</td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr><td colspan="4" class="empty">No predictions yet — run your first one!</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
 {% endblock %}

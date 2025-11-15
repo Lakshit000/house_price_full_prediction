@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Model Performance — House Price AI{% endblock %}
+{% block content %}
+<section class="card wide-card">
+  <div class="card-header">
+    <div>
+      <p class="muted" style="margin:0;">Evaluation</p>
+      <h2 style="margin:.2rem 0;">Model performance</h2>
+    </div>
+    <div class="card-actions">
+      <a class="btn small ghost" href="{{ url_for('dashboard') }}">Dashboard</a>
+    </div>
+  </div>
+
+  <div class="insight-grid" style="grid-column:span 12;margin-bottom:1.5rem;">
+    <div class="insight-card">
+      <h4>RMSE</h4>
+      <p class="muted">Root Mean Square Error</p>
+      <div class="stat-value" style="font-size:2rem;">₹ {{ "{:,.0f}".format(rmse) if rmse else '—' }}</div>
+    </div>
+    <div class="insight-card">
+      <h4>MSE</h4>
+      <p class="muted">Average squared error</p>
+      <div class="stat-value" style="font-size:2rem;">₹ {{ "{:,.0f}".format(mse) if mse else '—' }}</div>
+    </div>
+    <div class="insight-card">
+      <h4>R² Score</h4>
+      <p class="muted">Explained variance</p>
+      <div class="stat-value" style="font-size:2rem;">{{ "{:.3f}".format(r2) }}</div>
+    </div>
+  </div>
+
+  {% if plot_url %}
+  <div class="visual-card" style="height:auto;">
+    <h3 class="muted">Predicted vs Actual (full dataset)</h3>
+    <img src="{{ plot_url }}" alt="Model performance plot" style="width:100%;border-radius:14px;margin-top:1rem;">
+  </div>
+  {% else %}
+  <p class="muted">Plot not available.</p>
+  {% endif %}
+</section>
+{% endblock %}
+

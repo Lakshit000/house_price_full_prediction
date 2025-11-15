@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Admin · Users{% endblock %}
+{% block content %}
+<section class="card wide-card">
+  <div class="card-header">
+    <div>
+      <p class="muted" style="margin:0;">Workspace members</p>
+      <h2 style="margin:.2rem 0;">User directory</h2>
+    </div>
+    <div class="card-actions">
+      <a class="btn small ghost" href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+      <a class="btn small" href="{{ url_for('admin_create_user') }}">Create user</a>
+    </div>
+  </div>
+
+  <div class="table-wrap" style="overflow:auto;">
+    <table class="styled-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>User</th>
+          <th>Role</th>
+          <th>Last login</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if users %}
+          {% for u in users %}
+            <tr>
+              <td>{{ u.id }}</td>
+              <td>
+                <div style="display:flex;flex-direction:column;">
+                  <strong>{{ u.username }}</strong>
+                  <span class="muted" style="font-size:.8rem;">ID {{ u.id }}</span>
+                </div>
+              </td>
+              <td>
+                <span class="badge-role">{{ u.role or 'user' }}</span>
+              </td>
+              <td>{{ u.last_login or 'Never' }}</td>
+              <td>
+                <div class="table-actions">
+                  <form method="post" action="{{ url_for('admin_change_role', user_id=u.id) }}">
+                    <label class="form-note">Role</label>
+                    <select name="role">
+                      <option value="user" {% if u.role=='user' %}selected{% endif %}>User</option>
+                      <option value="admin" {% if u.role=='admin' %}selected{% endif %}>Admin</option>
+                    </select>
+                    <button class="btn small" type="submit">Update</button>
+                  </form>
+                  <form method="post" action="{{ url_for('admin_delete_user', user_id=u.id) }}" onsubmit="return confirm('Delete {{ u.username }}? This removes their access.');">
+                    <label class="form-note">Danger</label>
+                    <button class="btn small danger" type="submit">Delete</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr><td colspan="5" class="empty">No users yet</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+
