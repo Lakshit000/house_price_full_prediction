@@ -93,12 +93,13 @@ def get_model():
         try:
             with open(MODEL_FILE, 'rb') as f:
                 loaded = pickle.load(f)
-                # allow both saving approaches: either raw model or dict with model+imputer+scaler
+                # allow both saving approaches: either raw model or dict with model+imputer+scaler+encoder
                 if isinstance(loaded, dict) and 'model' in loaded:
                     model_artifacts = {
                         'model': loaded.get('model'),
                         'imputer': loaded.get('imputer'),
                         'scaler': loaded.get('scaler'),
+                        'encoder': loaded.get('encoder'),
                         'log_target': loaded.get('log_target', False)
                     }
                 else:
@@ -106,6 +107,7 @@ def get_model():
                         'model': loaded,
                         'imputer': None,
                         'scaler': None,
+                        'encoder': None,
                         'log_target': False
                     }
             print(f"Loaded model from {MODEL_FILE}")
@@ -709,6 +711,10 @@ def model_performance():
             X = pd.DataFrame(imputer.transform(X), columns=feat_cols)
         else:
             X = X.fillna(0)
+        
+        # Apply target encoder if available (must be before scaler)
+        if encoder is not None:
+            X = encoder.transform(X)
         
         # Apply scaling
         if scaler is not None:
