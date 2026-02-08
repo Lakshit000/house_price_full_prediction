@@ -643,7 +643,10 @@ def predict():
             conn.commit()
             log_activity('predict', {'input': input_data, 'predicted_price': predicted_price}, conn=conn)
 
-        return render_template('predict.html', predicted_price=predicted_price, input_preview=input_data)
+        # Format input preview for display
+        input_preview = preview_payload(json.dumps(input_data))
+        
+        return render_template('predict.html', predicted_price=predicted_price, input_preview=input_preview)
     except Exception as e:
         print('Prediction error:', e)
         traceback.print_exc()
@@ -681,7 +684,7 @@ def model_performance():
     if not os.path.exists(DATA_CSV):
         flash('Data CSV is missing', 'warning')
         return redirect(url_for('dashboard'))
-    model_obj, feat_cols, imputer, scaler, log_target = get_model()
+    model_obj, feat_cols, imputer, scaler, encoder, log_target = get_model()
     if model_obj is None or not feat_cols:
         flash('Model is not available', 'warning')
         return redirect(url_for('dashboard'))
