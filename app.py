@@ -74,8 +74,8 @@ def inject_helpers():
 # -------------------- MODEL LOADER --------------------
 def get_model():
     """
-    Lazy-load model artifacts (model, imputer, scaler, log_target flag) and feature columns.
-    Returns tuple: (model, feature_columns, imputer, scaler, log_target_bool)
+    Lazy-load model artifacts (model, imputer, scaler, encoder, log_target flag) and feature columns.
+    Returns tuple: (model, feature_columns, imputer, scaler, encoder, log_target_bool)
     """
     global model_artifacts, feature_columns
     if model_artifacts is not None and feature_columns is not None:
@@ -84,6 +84,7 @@ def get_model():
             feature_columns,
             model_artifacts.get('imputer'),
             model_artifacts.get('scaler'),
+            model_artifacts.get('encoder'),
             bool(model_artifacts.get('log_target'))
         )
 
@@ -146,54 +147,73 @@ def get_model():
         feature_columns = []
 
     if model_artifacts is None:
-        return None, feature_columns, None, None, False
+        return None, feature_columns, None, None, None, False
 
     return (
         model_artifacts.get('model'),
         feature_columns,
         model_artifacts.get('imputer'),
         model_artifacts.get('scaler'),
+        model_artifacts.get('encoder'),
         bool(model_artifacts.get('log_target'))
     )
 
 # -------------------- FEATURE ENGINEERING HELPER --------------------
 def engineer_features(df, current_year=None):
     """
-    Apply the same feature engineering as in train_model.py
+    Apply the same advanced feature engineering as in train_lightgbm.py
+    This includes spatial features, interaction terms, and derived metrics.
     """
     if current_year is None:
         current_year = datetime.datetime.now().year
     
     df = df.copy()
     
-    # Calculate house age
+    # Spatial features
+    if "Lattitude" in df.columns and "Longitude" in df.columns:
+        city_lat, city_lon = 47.6062, -122.3321  # Seattle center
+        df["dist_from_center"] = np.sqrt(
+            (df["Lattitude"] - city_lat)**2 + (df["Longitude"] - city_lon)**2
+        )
+        df["lat_grid"] = pd.cut(df["Lattitude"], bins=10, labels=False).astype('float')
+        df["lon_grid"] = pd.cut(df["Longitude"], bins=10, labels=False).astype('float')
+    
+    # Calculate house age and squared term
     if "Built Year" in df.columns:
-        df["house_age"] = current_year - df["Built Year"].fillna(current_year)
-        df["house_age"] = df["house_age"].clip(lower=0, upper=200)
+        df["house_age"] = (current_year - df["Built Year"]).clip(lower=0)
+        df["house_age_sq"] = df["house_age"] ** 2
     
     # Renovation status
     if "Renovation Year" in df.columns:
         df["is_renovated"] = (df["Renovation Year"] > 0).astype(int)
-        df["years_since_renovation"] = current_year - df["Renovation Year"].fillna(0)
-        df["years_since_renovation"] = df["years_since_renovation"].clip(lower=0, upper=200)
+        df["years_since_reno"] = (current_year - df["Renovation Year"]).clip(lower=0)
     else:
         df["is_renovated"] = 0
-        df["years_since_renovation"] = 0
+        df["years_since_reno"] = 0
     
     # Area ratios and derived features
-    if "living area" in df.columns and "lot area" in df.columns:
-        df["living_to_lot_ratio"] = df["living area"] / (df["lot area"] + 1)
-        df["total_area"] = df["living area"] + df.get("Area of the basement", 0).fillna(0)
+    if "living area" in df.columns:
+        if "lot area" in df.columns:
+            df["living_to_lot"] = df["living area"] / (df["lot area"] + 1)
+            df["total_area"] = df["living area"] + df.get("Area of the basement", 0).fillna(0)
+        
+        if "number of bedrooms" in df.columns:
+            df["area_per_bed"] = df["living area"] / (df["number of bedrooms"] + 1)
+        
+        if "number of bathrooms" in df.columns:
+            df["area_per_bath"] = df["living area"] / (df["number of bathrooms"] + 1)
     
-    if "living area" in df.columns and "number of bedrooms" in df.columns:
-        df["area_per_bedroom"] = df["living area"] / (df["number of bedrooms"] + 1)
-    
-    if "living area" in df.columns and "number of bathrooms" in df.columns:
-        df["area_per_bathroom"] = df["living area"] / (df["number of bathrooms"] + 1)
-    
-    # Basement ratio
+    # Basement features
     if "Area of the basement" in df.columns and "living area" in df.columns:
         df["basement_ratio"] = df["Area of the basement"] / (df["living area"] + df["Area of the basement"] + 1)
+        df["has_basement"] = (df["Area of the basement"] > 0).astype(int)
+    
+    # Interaction features
+    if "number of floors" in df.columns and "number of bedrooms" in df.columns:
+        df["floors_x_beds"] = df["number of floors"] * df["number of bedrooms"]
+    
+    if "grade of the house" in df.columns and "condition of the house" in df.columns:
+        df["grade_x_condition"] = df["grade of the house"] * df["condition of the house"]
     
     return df
 
@@ -550,7 +570,7 @@ def predict():
     if request.method == 'GET':
         return render_template('predict.html')
 
-    model_obj, feat_cols, imputer, scaler, log_target = get_model()
+    model_obj, feat_cols, imputer, scaler, encoder, log_target = get_model()
     if model_obj is None or not feat_cols:
         flash('Prediction model is not available', 'danger')
         return render_template('predict.html')
@@ -562,7 +582,8 @@ def predict():
     ]
     # Optional features that might be needed for feature engineering
     optional_keys = ['lot area', 'waterfront present', 'number of views', 
-                     'Renovation Year', 'Number of schools nearby', 'Distance from the airport']
+                     'Renovation Year', 'Number of schools nearby', 'Distance from the airport',
+                     'Postal Code', 'Lattitude', 'Longitude']
     
     input_data = {}
     try:
@@ -583,7 +604,7 @@ def predict():
                 try:
                     input_data[k] = float(v)
                 except:
-                    input_data[k] = 0
+                    input_data[k] = v  # Keep as string if not convertible to float
             elif k in feat_cols:  # If feature is expected but not provided, set default
                 input_data[k] = 0
 
@@ -601,6 +622,10 @@ def predict():
         # Apply imputation
         if imputer is not None:
             df_input = pd.DataFrame(imputer.transform(df_input), columns=feat_cols)
+        
+        # Apply target encoder if available
+        if encoder is not None:
+            df_input = encoder.transform(df_input)
         
         # Apply scaling
         if scaler is not None:
