@@ -1,0 +1,16 @@
+services:
+- type: web
+  name: house-price-predictor
+  env: python
+  runtime: python314
+  buildCommand: 'pip install -r requirements.txt'
+  startCommand: 'gunicorn app:app'
+  plan: free
+  envVars:
+    - key: FLASK_ENV
+      value: production
+    - key: FLASK_SECRET
+      fromDatabase:
+        name: house-price-db
+        property: FLASK_SECRET
+      scope: run_and_build
